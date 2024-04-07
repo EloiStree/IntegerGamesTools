@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.IO;
 using System.Security.AccessControl;
 using System.Security.Cryptography;
 using System.Text;
@@ -21,11 +22,66 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 
+
+
+
 class Program
 {
+    public static string pathPrivatePublic;
+    public static string pathPublic;
+
+    public static string ReadFromFolderPrivatePublic(string relativeFilePath)
+    {
+        string p = Path.Combine(pathPrivatePublic, relativeFilePath);
+        if (!File.Exists(p))
+            Directory.CreateDirectory(Path.GetDirectoryName(p));
+        
+        return File.ReadAllText(p);
+    }
+    public static bool ExistsFromFolderPrivatePublic(string relativeFilePath)
+    {
+        
+
+        return File.Exists(Path.Combine(pathPrivatePublic, relativeFilePath));
+    }
+    public static void WriteFromFolderPrivatePublic(string relativeFilePath, string text)
+    {
+        string p = Path.Combine(pathPrivatePublic, relativeFilePath);
+        if (!File.Exists(p))
+            Directory.CreateDirectory(Path.GetDirectoryName(p));
+
+        File.WriteAllText(p, text);
+    }
+    public static void WriteFromFolderPublic(string relativeFilePath, string text)
+    {
+        string p = Path.Combine(pathPublic, relativeFilePath);
+        if (!File.Exists(p))
+            Directory.CreateDirectory(Path.GetDirectoryName(p));
+
+        File.WriteAllText(p, text);
+    }
+
     static async Task Main(string[] args)
     {
-        string privateRSAKeyPEM="";
+
+         pathPrivatePublic    = Path.Combine(Directory.GetCurrentDirectory(), "KeyPair");
+         pathPublic           = Path.Combine(Directory.GetCurrentDirectory(), "KeyPairOnlyPublic");
+        
+
+        if (args.Length > 0)
+        {
+            pathPrivatePublic = args[0];
+        }
+        if (args.Length > 1)
+        {
+            pathPublic = args[1];
+        }
+        Directory.CreateDirectory(pathPrivatePublic);
+        Directory.CreateDirectory(pathPublic);
+
+
+
+        string privateRSAKeyPEM ="";
         string publicRSAKeyPEM = "";
         string privateKeyEthereum = "";
         string publicKeyEthereum = "";
@@ -34,33 +90,27 @@ class Program
         string publicRsaKeyXml = "";
 
         //Read a file name PrivateKey.txt and PublicKey.txt
-        string path = Directory.GetCurrentDirectory();
         Console.WriteLine("Hello :) \n\n");
-        if (File.Exists("KeyPair/Private/RSA_PRIVATE_XML.txt"))
+        if (ExistsFromFolderPrivatePublic("Private/RSA_PRIVATE_XML.txt"))
         {
-            Console.WriteLine("You already have a private key generated, here:\n" + path);
+            Console.WriteLine("You already have a private key generated, here:\n" + pathPrivatePublic);
             Console.WriteLine("");
 
-            privateRsaKeyXml = File.ReadAllText("KeyPair/Private/RSA_PRIVATE_XML.txt"); 
-            publicRsaKeyXml = File.ReadAllText("KeyPair/Public/RSA_PUBLIC_XML.txt"); 
-            
-            privateRSAKeyPEM = File.ReadAllText("KeyPair/Private/RSA_PRIVATE_PEM.txt"); 
-            publicRSAKeyPEM = File.ReadAllText("KeyPair/Public/RSA_PUBLIC_PEM.txt");
-
-            privateKeyEthereum = File.ReadAllText("KeyPair/Private/ETH_PRIVATE.txt");
-            publicKeyEthereum = File.ReadAllText("KeyPair/Public/ETH_PUBLIC.txt");
-            address =  File.ReadAllText("KeyPair/Public/ETH_ADDRESS.txt");
+            privateRsaKeyXml =  ReadFromFolderPrivatePublic("Private/RSA_PRIVATE_XML.txt"); 
+            publicRsaKeyXml =   ReadFromFolderPrivatePublic("Public/RSA_PUBLIC_XML.txt"); 
+            privateRSAKeyPEM =  ReadFromFolderPrivatePublic("Private/RSA_PRIVATE_PEM.txt"); 
+            publicRSAKeyPEM =   ReadFromFolderPrivatePublic("Public/RSA_PUBLIC_PEM.txt");
+            privateKeyEthereum =ReadFromFolderPrivatePublic("Private/ETH_PRIVATE.txt");
+            publicKeyEthereum = ReadFromFolderPrivatePublic("Public/ETH_PUBLIC.txt");
+            address =           ReadFromFolderPrivatePublic("Public/ETH_ADDRESS.txt");
 
         }
         else
         {
 
-            Console.WriteLine("Start creating key pair RSA & Ethereum, here:\n" + path);
+            Console.WriteLine("Start creating key pair RSA & Ethereum, here:\n" + pathPrivatePublic);
             Console.WriteLine("\n\n\n");
 
-            Directory.CreateDirectory("KeyPair");
-            Directory.CreateDirectory("KeyPair/Private");
-            Directory.CreateDirectory("KeyPair/Public");
 
             using (RSA rsa = RSA.Create())
             {
@@ -68,20 +118,21 @@ class Program
 
                 privateRsaKeyXml    = rsa.ToXmlString(true);
                 publicRsaKeyXml     = rsa.ToXmlString(false);
-                File.WriteAllText("KeyPair/Private/RSA_PRIVATE_XML.txt", privateRsaKeyXml);
-                File.WriteAllText("KeyPair/Private/0_DONT_SHARE.txt", "DONT SHARE YOUR PRIVATE KEY TO ANYONE");
-                File.WriteAllText("KeyPair/Private/1_DONT_OPEN_DURING_STREAM.txt", "DONT OPEN THIS FILE AS A STREAMER");
-                File.WriteAllText("KeyPair/Private/2_DONT_PUT_ON_GITHUB.txt", "OBVIOUSLY DONT PUT THOSE FILE ON GITHUB");
-                
-                File.WriteAllText("KeyPair/Public/RSA_PUBLIC_XML.txt", publicRsaKeyXml);
+                WriteFromFolderPrivatePublic("Private/RSA_PRIVATE_XML.txt", privateRsaKeyXml);
+                WriteFromFolderPrivatePublic("Private/0_DONT_SHARE.txt", "DONT SHARE YOUR PRIVATE KEY TO ANYONE");
+                WriteFromFolderPrivatePublic("Private/1_DONT_OPEN_DURING_STREAM.txt", "DONT OPEN THIS FILE AS A STREAMER");
+                WriteFromFolderPrivatePublic("Private/2_DONT_PUT_ON_GITHUB.txt", "OBVIOUSLY DONT PUT THOSE FILE ON GITHUB");
+                WriteFromFolderPrivatePublic("Public/RSA_PUBLIC_XML.txt", publicRsaKeyXml);
+                WriteFromFolderPublic("RSA_PUBLIC_XML.txt", publicRsaKeyXml);
 
 
                 privateRSAKeyPEM  = rsa.ExportRSAPrivateKeyPem();
                 publicRSAKeyPEM     = rsa.ExportRSAPublicKeyPem();
 
 
-                File.WriteAllText("KeyPair/Private/RSA_PRIVATE_PEM.txt", privateRSAKeyPEM);
-                File.WriteAllText("KeyPair/Public/RSA_PUBLIC_PEM.txt", publicRSAKeyPEM);
+                WriteFromFolderPrivatePublic("Private/RSA_PRIVATE_PEM.txt", privateRSAKeyPEM);
+                WriteFromFolderPrivatePublic("Public/RSA_PUBLIC_PEM.txt", publicRSAKeyPEM);
+                WriteFromFolderPublic("RSA_PUBLIC_PEM.txt", publicRSAKeyPEM);
 
 
 
@@ -91,13 +142,17 @@ class Program
                 publicKeyEthereum    = ecKey.GetPubKey().ToHex();
                 address              = ecKey.GetPublicAddress();
 
-                File.WriteAllText("KeyPair/Private/ETH_PRIVATE.txt", privateKeyEthereum);
-                File.WriteAllText("KeyPair/Public/ETH_PUBLIC.txt", publicKeyEthereum);
-                File.WriteAllText("KeyPair/Public/ETH_ADDRESS.txt", address);
-                File.WriteAllText("KeyPair/Public/ETH_SCAN.url", $"[InternetShortcut]\nURL = https://etherscan.io/address/{address}");
+                WriteFromFolderPrivatePublic("Private/ETH_PRIVATE.txt", privateKeyEthereum);
+                WriteFromFolderPrivatePublic("Public/ETH_PUBLIC.txt", publicKeyEthereum);
+                WriteFromFolderPublic("ETH_PUBLIC.txt", publicKeyEthereum);
+                WriteFromFolderPrivatePublic("Public/ETH_ADDRESS.txt", address);
+                WriteFromFolderPublic("ETH_ADDRESS.txt", address);
+                WriteFromFolderPrivatePublic("Public/ETH_SCAN.url", $"[InternetShortcut]\nURL = https://etherscan.io/address/{address}");
+                WriteFromFolderPublic("ETH_SCAN.url", $"[InternetShortcut]\nURL = https://etherscan.io/address/{address}");
 
                 Identicon icon = new Identicon(address, 8, 5);
-                icon.SavePng("KeyPair/Public/ETH_ICON.png");
+                icon.SavePng(Path.Combine(pathPrivatePublic, "Public/ETH_ICON.png"));
+                icon.SavePng(Path.Combine(pathPublic, "ETH_ICON.png"));
 
                 // PEM TO XML
                 //string xmlPrivateKey = PemToXmlConverter.ConvertPrivateKey(publicPrivateKeyPEM);
@@ -110,8 +165,8 @@ class Program
         }
         Console.WriteLine("\n\n >>> Never share your private key. <<< \n\n");
 
-        //string privateKey = File.ReadAllText("KeyPair/Private/RSA_PRIVATE_XML.txt");
-        string publicKey = File.ReadAllText("KeyPair/Public/RSA_PUBLIC_XML.txt");
+        //string privateKey = File.ReadAllText("Private/RSA_PRIVATE_XML.txt");
+        string publicKey = ReadFromFolderPrivatePublic("Public/RSA_PUBLIC_XML.txt");
 
         Console.WriteLine(">> Current Public Key <<");
         Console.WriteLine();
@@ -137,8 +192,10 @@ class Program
         Console.WriteLine();
         Console.WriteLine();
 
-        Console.WriteLine("Press any key to exit...");
-        Console.ReadKey();
+        if (args.Length < 3) { 
+            Console.WriteLine("Press any key to exit...");
+            Console.ReadKey();
+        }
     }
 }
 
